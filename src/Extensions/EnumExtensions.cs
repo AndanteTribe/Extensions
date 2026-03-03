@@ -66,9 +66,9 @@ public static class EnumExtensions
         var (v, f) = Unsafe.SizeOf<T>() switch
         {
             1 => (Unsafe.As<T, byte>(ref value), Unsafe.As<T, byte>(ref flag)),
-            2 => (Unsafe.As<T, short>(ref value), Unsafe.As<T, short>(ref flag)),
-            4 => (Unsafe.As<T, int>(ref value), Unsafe.As<T, int>(ref flag)),
-            8 => (Unsafe.As<T, long>(ref value), Unsafe.As<T, long>(ref flag)),
+            2 => (Unsafe.As<T, ushort>(ref value), Unsafe.As<T, ushort>(ref flag)),
+            4 => (Unsafe.As<T, uint>(ref value), Unsafe.As<T, uint>(ref flag)),
+            8 => (Unsafe.As<T, ulong>(ref value), Unsafe.As<T, ulong>(ref flag)),
             _ => throw new NotSupportedException("Unsupported enum underlying type size.")
         };
         return (v & f) == f;
@@ -125,9 +125,9 @@ public static class EnumExtensions
         var v = Unsafe.SizeOf<T>() switch
         {
             1 => Unsafe.As<T, byte>(ref value),
-            2 => Unsafe.As<T, short>(ref value),
-            4 => Unsafe.As<T, int>(ref value),
-            8 => Unsafe.As<T, long>(ref value),
+            2 => Unsafe.As<T, ushort>(ref value),
+            4 => Unsafe.As<T, uint>(ref value),
+            8 => Unsafe.As<T, ulong>(ref value),
             _ => throw new NotSupportedException("Unsupported enum underlying type size.")
         };
         return v != 0 && (v & (v - 1)) == 0;

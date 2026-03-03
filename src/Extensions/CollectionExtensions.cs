@@ -84,10 +84,8 @@ public static class CollectionExtensions
             var newArray = pool.Rent(minimumLength);
             if (array.Length > 0)
             {
-                var temp = array.AsSpan();
-                temp.CopyTo(newArray);
-                temp.Clear();
-                pool.Return(array);
+                array.AsSpan().CopyTo(newArray);
+                pool.Return(array, true);
             }
             array = newArray;
         }
