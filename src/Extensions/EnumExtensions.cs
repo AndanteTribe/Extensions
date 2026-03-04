@@ -59,19 +59,29 @@ public static class EnumExtensions
     /// </code>
     /// </example>
     /// <returns>True if all bits in the flag are set in the value; otherwise, false.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the underlying type of the enum is not supported.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool HasBitFlags<T>(this T value, T flag) where T : struct, Enum
     {
-        var (v, f) = Unsafe.SizeOf<T>() switch
+        if (Unsafe.SizeOf<T>() == 1)
         {
-            1 => (Unsafe.As<T, byte>(ref value), Unsafe.As<T, byte>(ref flag)),
-            2 => (Unsafe.As<T, ushort>(ref value), Unsafe.As<T, ushort>(ref flag)),
-            4 => (Unsafe.As<T, uint>(ref value), Unsafe.As<T, uint>(ref flag)),
-            8 => (Unsafe.As<T, ulong>(ref value), Unsafe.As<T, ulong>(ref flag)),
-            _ => throw new NotSupportedException("Unsupported enum underlying type size.")
-        };
-        return (v & f) == f;
+            var (v, f) = (Unsafe.As<T, byte>(ref value), Unsafe.As<T, byte>(ref flag));
+            return (v & f) == f;
+        }
+        else if (Unsafe.SizeOf<T>() == 2)
+        {
+            var (v, f) = (Unsafe.As<T, ushort>(ref value), Unsafe.As<T, ushort>(ref flag));
+            return (v & f) == f;
+        }
+        else if (Unsafe.SizeOf<T>() == 4)
+        {
+            var (v, f) = (Unsafe.As<T, uint>(ref value), Unsafe.As<T, uint>(ref flag));
+            return (v & f) == f;
+        }
+        else
+        {
+            var (v, f) = (Unsafe.As<T, ulong>(ref value), Unsafe.As<T, ulong>(ref flag));
+            return (v & f) == f;
+        }
     }
 
     /// <summary>
@@ -118,19 +128,29 @@ public static class EnumExtensions
     /// </code>
     /// </example>
     /// <returns>True if the value has exactly one bit flag set; otherwise, false.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the underlying type of the enum is not supported.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ConstructFlags<T>(this T value) where T : struct, Enum
     {
-        var v = Unsafe.SizeOf<T>() switch
+        if (Unsafe.SizeOf<T>() == 1)
         {
-            1 => Unsafe.As<T, byte>(ref value),
-            2 => Unsafe.As<T, ushort>(ref value),
-            4 => Unsafe.As<T, uint>(ref value),
-            8 => Unsafe.As<T, ulong>(ref value),
-            _ => throw new NotSupportedException("Unsupported enum underlying type size.")
-        };
-        return v != 0 && (v & (v - 1)) == 0;
+            var v = Unsafe.As<T, byte>(ref value);
+            return v != 0 && (v & (v - 1)) == 0;
+        }
+        else if (Unsafe.SizeOf<T>() == 2)
+        {
+            var v = Unsafe.As<T, ushort>(ref value);
+            return v != 0 && (v & (v - 1)) == 0;
+        }
+        else if (Unsafe.SizeOf<T>() == 4)
+        {
+            var v = Unsafe.As<T, uint>(ref value);
+            return v != 0 && (v & (v - 1)) == 0;
+        }
+        else
+        {
+            var v = Unsafe.As<T, ulong>(ref value);
+            return v != 0 && (v & (v - 1)) == 0;
+        }
     }
 
     /// <summary>
@@ -189,54 +209,56 @@ public static class EnumExtensions
     /// <param name="flags">A read-only span of enum flags to aggregate.</param>
     /// <typeparam name="T">The enum type.</typeparam>
     /// <returns>A single enum value representing the bitwise OR of all flags.</returns>
-    /// <exception cref="NotSupportedException">Thrown when the underlying type of the enum is not supported.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T AggregateFlags<T>(this ReadOnlySpan<T> flags) where T : struct, Enum
     {
-        switch (Unsafe.SizeOf<T>())
+        if (Unsafe.SizeOf<T>() == 1)
         {
-            case 1:
-                var r1 = default(byte);
-                var e1 = flags.GetEnumerator();
-                while (e1.MoveNext())
-                {
-                    var flag = e1.Current;
-                    var f = Unsafe.As<T, byte>(ref flag);
-                    r1 = (byte)(r1 | f);
-                }
-                return Unsafe.As<byte, T>(ref r1);
-            case 2:
-                var r2 = default(short);
-                var e2 = flags.GetEnumerator();
-                while (e2.MoveNext())
-                {
-                    var flag = e2.Current;
-                    var f = Unsafe.As<T, short>(ref flag);
-                    r2 = (short)(r2 | f);
-                }
-                return Unsafe.As<short, T>(ref r2);
-            case 4:
-                var r4 = 0;
-                var e4 = flags.GetEnumerator();
-                while (e4.MoveNext())
-                {
-                    var flag = e4.Current;
-                    var f = Unsafe.As<T, int>(ref flag);
-                    r4 |= f;
-                }
-                return Unsafe.As<int, T>(ref r4);
-            case 8:
-                var r8 = 0L;
-                var e8 = flags.GetEnumerator();
-                while (e8.MoveNext())
-                {
-                    var flag = e8.Current;
-                    var f = Unsafe.As<T, long>(ref flag);
-                    r8 |= f;
-                }
-                return Unsafe.As<long, T>(ref r8);
-            default:
-                throw new NotSupportedException("Unsupported enum underlying type size.");
+            var r1 = default(byte);
+            var e1 = flags.GetEnumerator();
+            while (e1.MoveNext())
+            {
+                var flag = e1.Current;
+                var f = Unsafe.As<T, byte>(ref flag);
+                r1 = (byte)(r1 | f);
+            }
+            return Unsafe.As<byte, T>(ref r1);
+        }
+        else if (Unsafe.SizeOf<T>() == 2)
+        {
+            var r2 = default(short);
+            var e2 = flags.GetEnumerator();
+            while (e2.MoveNext())
+            {
+                var flag = e2.Current;
+                var f = Unsafe.As<T, short>(ref flag);
+                r2 = (short)(r2 | f);
+            }
+            return Unsafe.As<short, T>(ref r2);
+        }
+        else if (Unsafe.SizeOf<T>() == 4)
+        {
+            var r4 = 0;
+            var e4 = flags.GetEnumerator();
+            while (e4.MoveNext())
+            {
+                var flag = e4.Current;
+                var f = Unsafe.As<T, int>(ref flag);
+                r4 |= f;
+            }
+            return Unsafe.As<int, T>(ref r4);
+        }
+        else
+        {
+            var r8 = 0L;
+            var e8 = flags.GetEnumerator();
+            while (e8.MoveNext())
+            {
+                var flag = e8.Current;
+                var f = Unsafe.As<T, long>(ref flag);
+                r8 |= f;
+            }
+            return Unsafe.As<long, T>(ref r8);
         }
     }
 
