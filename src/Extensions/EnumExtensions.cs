@@ -263,11 +263,6 @@ public static class EnumExtensions
     /// <summary>
     /// Enumerates all individual bit flags set in the enum value.
     /// </summary>
-    /// <remarks>
-    /// This method internally reinterprets the enum value as a 32-bit integer using <see cref="System.Runtime.CompilerServices.Unsafe"/>.
-    /// It should only be used with enums whose underlying type is <see langword="int"/> (the default).
-    /// Enums with other underlying types (e.g., <see langword="byte"/>, <see langword="long"/>) are not supported and may produce incorrect results.
-    /// </remarks>
     /// <param name="value">The enum value to enumerate.</param>
     /// <typeparam name="T">The enum type.</typeparam>
     /// <example>
@@ -315,6 +310,7 @@ public static class EnumExtensions
     /// </code>
     /// </example>
     /// <returns>An <see cref="Enumerator{T}"/> that enumerates all set bit flags.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the underlying type of the enum is not supported.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Enumerator<T> GetEnumerator<T>(this T value) where T : struct, Enum => new(value);
 
@@ -324,14 +320,30 @@ public static class EnumExtensions
     /// <typeparam name="T">The enum type.</typeparam>
     public struct Enumerator<T> where T : struct, Enum
     {
-        private int _value;
+        private ulong _value;
 
         /// <see cref="System.Collections.Generic.IEnumerator{T}.Current"/>
         public T Current { get; private set; }
 
         internal Enumerator(T value)
         {
-            _value = Unsafe.As<T, int>(ref value);
+            switch (Unsafe.SizeOf<T>())
+            {
+                case 1:
+                    _value = Unsafe.As<T, byte>(ref value);
+                    break;
+                case 2:
+                    _value = Unsafe.As<T, ushort>(ref value);
+                    break;
+                case 4:
+                    _value = Unsafe.As<T, uint>(ref value);
+                    break;
+                case 8:
+                    _value = Unsafe.As<T, ulong>(ref value);
+                    break;
+                default:
+                    throw new NotSupportedException("Unsupported enum underlying type size.");
+            }
             Current = default;
         }
 
@@ -343,9 +355,28 @@ public static class EnumExtensions
                 return false;
             }
 
-            var f = _value & -_value; // get lowest flag
-            Current = Unsafe.As<int, T>(ref f);
+            var f = _value & (~_value + 1); // isolate lowest set bit (two's complement negation)
             _value &= ~f;
+            switch (Unsafe.SizeOf<T>())
+            {
+                case 1:
+                    var b = (byte)f;
+                    Current = Unsafe.As<byte, T>(ref b);
+                    break;
+                case 2:
+                    var s = (ushort)f;
+                    Current = Unsafe.As<ushort, T>(ref s);
+                    break;
+                case 4:
+                    var i = (uint)f;
+                    Current = Unsafe.As<uint, T>(ref i);
+                    break;
+                case 8:
+                    Current = Unsafe.As<ulong, T>(ref f);
+                    break;
+                default:
+                    throw new NotSupportedException("Unsupported enum underlying type size.");
+            }
             return true;
         }
     }

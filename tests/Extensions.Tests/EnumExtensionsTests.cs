@@ -173,29 +173,66 @@ public class EnumExtensionsTests
         Assert.Empty(result);
     }
 
-    // Risk case: Enumerator<T> constructor reads 4 bytes via Unsafe.As<T, int>(ref value).
-    // For ByteEnum (1 byte), this reads 3 bytes beyond the enum value's bounds.
-    // On .NET with zero-initialized stacks the upper bytes are typically 0, so simple values
-    // behave correctly in practice — but the code relies on undefined behavior.
     [Fact]
-    public void GetEnumerator_ByteEnum_SingleFlag_DocumentedBehavior()
+    public void GetEnumerator_ByteEnum_MultipleFlagsAreEnumerated()
     {
         var result = new List<ByteEnum>();
-        foreach (var flag in ByteEnum.A)
+        foreach (var flag in ByteEnum.A | ByteEnum.B | ByteEnum.C)
             result.Add(flag);
-        Assert.Contains(ByteEnum.A, result);
+        Assert.Equal(new[] { ByteEnum.A, ByteEnum.B, ByteEnum.C }, result);
     }
 
-    // Risk case: Enumerator<T> stores the value in an int field (Unsafe.As<T, int>).
-    // For LongEnum (8 bytes), only the lower 32 bits are captured on little-endian systems.
-    // Flags above bit 31 (e.g. HighBit = 1L << 32) are silently dropped.
     [Fact]
-    public void GetEnumerator_LongEnum_HighBitFlag_IsNotEnumeratedDueToIntTruncation()
+    public void GetEnumerator_ByteEnum_None_YieldsNothing()
+    {
+        var result = new List<ByteEnum>();
+        foreach (var flag in ByteEnum.None)
+            result.Add(flag);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void GetEnumerator_ShortEnum_MultipleFlagsAreEnumerated()
+    {
+        var result = new List<ShortEnum>();
+        foreach (var flag in ShortEnum.A | ShortEnum.B | ShortEnum.C)
+            result.Add(flag);
+        Assert.Equal(new[] { ShortEnum.A, ShortEnum.B, ShortEnum.C }, result);
+    }
+
+    [Fact]
+    public void GetEnumerator_ShortEnum_None_YieldsNothing()
+    {
+        var result = new List<ShortEnum>();
+        foreach (var flag in ShortEnum.None)
+            result.Add(flag);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void GetEnumerator_LongEnum_MultipleFlagsAreEnumerated()
+    {
+        var result = new List<LongEnum>();
+        foreach (var flag in LongEnum.A | LongEnum.B | LongEnum.C)
+            result.Add(flag);
+        Assert.Equal(new[] { LongEnum.A, LongEnum.B, LongEnum.C }, result);
+    }
+
+    [Fact]
+    public void GetEnumerator_LongEnum_HighBitFlag_IsEnumerated()
     {
         var result = new List<LongEnum>();
         foreach (var flag in LongEnum.HighBit)
             result.Add(flag);
-        // On little-endian: _value = lower 32 bits of 0x0000_0001_0000_0000 = 0 → nothing enumerated.
-        Assert.DoesNotContain(LongEnum.HighBit, result);
+        Assert.Contains(LongEnum.HighBit, result);
+    }
+
+    [Fact]
+    public void GetEnumerator_LongEnum_None_YieldsNothing()
+    {
+        var result = new List<LongEnum>();
+        foreach (var flag in LongEnum.None)
+            result.Add(flag);
+        Assert.Empty(result);
     }
 }
