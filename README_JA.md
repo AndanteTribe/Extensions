@@ -111,7 +111,7 @@ public void Cleanup()
 
 ### EnumExtensions
 
-すべての enum 拡張メソッドは `T : struct, Enum` の制約を持つ任意の enum 型で動作し、`Unsafe` を使用してボクシングなしに実装されています。
+すべての enum 拡張メソッドは `T : struct, Enum` の制約を持つ enum 型で動作し、`Unsafe` を使用してボクシングなしに実装されています。ただし、`GetEnumerator<T>(this T value)` は内部的に値を `int` として解釈するため、基底型が `int` の enum にのみ対応します。
 
 #### `HasBitFlags<T>(T flag)`
 
@@ -181,10 +181,11 @@ foreach (var c in memory)
 
 #### `(T, T, ...).AsSpan()`
 
-同型の `ValueTuple` をアロケーションなしで `ReadOnlySpan<T>` に変換します。
+同型の `ValueTuple` をアロケーションなしで `ReadOnlySpan<T>` に変換します。`AsSpan()` は `ref this` レシーバーを使用するため、タプルリテラルに直接呼び出すことはできません。事前にローカル変数に代入する必要があります。
 
 ```csharp
-var span = ("Hello", "World").AsSpan();
+var tuple = ("Hello", "World");
+var span = tuple.AsSpan();
 foreach (var item in span)
 {
     Console.WriteLine(item); // Hello, World

@@ -111,7 +111,7 @@ public void Cleanup()
 
 ### EnumExtensions
 
-All enum extension methods operate on any enum type `T` where `T : struct, Enum` and are implemented without boxing using `Unsafe`.
+All enum extension methods operate on any enum type `T` where `T : struct, Enum` and are implemented without boxing using `Unsafe`. The `GetEnumerator<T>(this T value)` method currently assumes the enum's underlying type is `int` and should only be used with such enums.
 
 #### `HasBitFlags<T>(T flag)`
 
@@ -181,10 +181,11 @@ Supports homogeneous tuples with 2 to 7 elements of the same type `T`.
 
 #### `(T, T, ...).AsSpan()`
 
-Converts a homogeneous `ValueTuple` to a `ReadOnlySpan<T>` without allocation.
+Converts a homogeneous `ValueTuple` to a `ReadOnlySpan<T>` without allocation. Because `AsSpan()` uses a `ref this` receiver, you must assign the tuple to a local variable before calling it.
 
 ```csharp
-var span = ("Hello", "World").AsSpan();
+var tuple = ("Hello", "World");
+var span = tuple.AsSpan();
 foreach (var item in span)
 {
     Console.WriteLine(item); // Hello, World

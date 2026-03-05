@@ -12,6 +12,10 @@ public static class ValueTupleExtensions
     /// <summary>
     /// Converts a 2-element ValueTuple to a <see cref="ReadOnlySpan{T}"/>.
     /// </summary>
+    /// <remarks>
+    /// Because this method uses a <see langword="ref this"/> receiver, it cannot be called on a
+    /// tuple literal directly. Assign the tuple to a local variable first.
+    /// </remarks>
     /// <example>
     /// <code>
     /// <![CDATA[
@@ -19,8 +23,9 @@ public static class ValueTupleExtensions
     /// {
     ///     public static void Main()
     ///     {
-    ///         // Iterate through the span
-    ///         var span = ("Hello", "World").AsSpan();
+    ///         // Assign to a variable first (required for ref this receiver)
+    ///         var tuple = ("Hello", "World");
+    ///         var span = tuple.AsSpan();
     ///         foreach (var item in span)
     ///         {
     ///             Console.WriteLine(item);
