@@ -63,15 +63,27 @@ public static class EnumExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool HasBitFlags<T>(this T value, T flag) where T : struct, Enum
     {
-        var (v, f) = Unsafe.SizeOf<T>() switch
+        switch (Unsafe.SizeOf<T>())
         {
-            1 => (Unsafe.As<T, byte>(ref value), Unsafe.As<T, byte>(ref flag)),
-            2 => (Unsafe.As<T, ushort>(ref value), Unsafe.As<T, ushort>(ref flag)),
-            4 => (Unsafe.As<T, uint>(ref value), Unsafe.As<T, uint>(ref flag)),
-            8 => (Unsafe.As<T, ulong>(ref value), Unsafe.As<T, ulong>(ref flag)),
-            _ => throw new NotSupportedException("Unsupported enum underlying type size.")
-        };
-        return (v & f) == f;
+            case 1:
+                var v = Unsafe.As<T, byte>(ref value);
+                var f = Unsafe.As<T, byte>(ref flag);
+                return (v & f) == f;
+            case 2:
+                var v2 = Unsafe.As<T, ushort>(ref value);
+                var f2 = Unsafe.As<T, ushort>(ref flag);
+                return (v2 & f2) == f2;
+            case 4:
+                var v4 = Unsafe.As<T, uint>(ref value);
+                var f4 = Unsafe.As<T, uint>(ref flag);
+                return (v4 & f4) == f4;
+            case 8:
+                var v8 = Unsafe.As<T, ulong>(ref value);
+                var f8 = Unsafe.As<T, ulong>(ref flag);
+                return (v8 & f8) == f8;
+            default:
+                throw new NotSupportedException("Unsupported enum underlying type size.");
+        }
     }
 
     /// <summary>
@@ -122,15 +134,23 @@ public static class EnumExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ConstructFlags<T>(this T value) where T : struct, Enum
     {
-        var v = Unsafe.SizeOf<T>() switch
+        switch (Unsafe.SizeOf<T>())
         {
-            1 => Unsafe.As<T, byte>(ref value),
-            2 => Unsafe.As<T, ushort>(ref value),
-            4 => Unsafe.As<T, uint>(ref value),
-            8 => Unsafe.As<T, ulong>(ref value),
-            _ => throw new NotSupportedException("Unsupported enum underlying type size.")
-        };
-        return v != 0 && (v & (v - 1)) == 0;
+            case 1:
+                var v = Unsafe.As<T, byte>(ref value);
+                return v != 0 && (v & (v - 1)) == 0;
+            case 2:
+                var v2 = Unsafe.As<T, ushort>(ref value);
+                return v2 != 0 && (v2 & (v2 - 1)) == 0;
+            case 4:
+                var v4 = Unsafe.As<T, uint>(ref value);
+                return v4 != 0 && (v4 & (v4 - 1)) == 0;
+            case 8:
+                var v8 = Unsafe.As<T, ulong>(ref value);
+                return v8 != 0 && (v8 & (v8 - 1)) == 0;
+            default:
+                throw new NotSupportedException("Unsupported enum underlying type size.");
+        }
     }
 
     /// <summary>
