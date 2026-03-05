@@ -365,6 +365,23 @@ public class ValueTupleExtensionsTests
         Assert.False(enumerator.MoveNext());
     }
 
+    /// <summary>
+    /// Tests that calling MoveNext after the enumerator is already exhausted returns false.
+    /// This covers the short-circuit branch in MoveNext where _current >= _end.
+    /// </summary>
+    [Fact]
+    public void GetEnumerator_MoveNextAfterExhausted_ReturnsFalse()
+    {
+        var tuple = (10, 20);
+        using var enumerator = tuple.GetEnumerator();
+
+        // Exhaust the enumerator
+        while (enumerator.MoveNext()) { }
+
+        // Call MoveNext again after exhaustion - _current >= _end so the first condition is false
+        Assert.False(enumerator.MoveNext());
+    }
+
     // ---- Performance/implementation detail tests ----
 
     /// <summary>
