@@ -20,7 +20,8 @@ public static class ValueTupleExtensions
     ///     public static void Main()
     ///     {
     ///         // Iterate through the span
-    ///         foreach (var item in ("Hello", "World").AsSpan())
+    ///         var span = ("Hello", "World").AsSpan();
+    ///         foreach (var item in span)
     ///         {
     ///             Console.WriteLine(item);
     ///         }
@@ -36,7 +37,7 @@ public static class ValueTupleExtensions
     /// <param name="tuple">The 2-element ValueTuple to convert.</param>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> with 2 elements.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> AsSpan<T>(this (T, T) tuple) =>
+    public static ReadOnlySpan<T> AsSpan<T>(ref this (T, T) tuple) =>
         MemoryMarshal.CreateReadOnlySpan(ref tuple.Item1, 2);
 
     /// <summary>
@@ -46,7 +47,7 @@ public static class ValueTupleExtensions
     /// <param name="tuple">The 3-element ValueTuple to convert.</param>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> with 3 elements.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> AsSpan<T>(this (T, T, T) tuple) =>
+    public static ReadOnlySpan<T> AsSpan<T>(ref this (T, T, T) tuple) =>
         MemoryMarshal.CreateReadOnlySpan(ref tuple.Item1, 3);
 
     /// <summary>
@@ -56,7 +57,7 @@ public static class ValueTupleExtensions
     /// <param name="tuple">The 4-element ValueTuple to convert.</param>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> with 4 elements.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> AsSpan<T>(this (T, T, T, T) tuple) =>
+    public static ReadOnlySpan<T> AsSpan<T>(ref this (T, T, T, T) tuple) =>
         MemoryMarshal.CreateReadOnlySpan(ref tuple.Item1, 4);
 
     /// <summary>
@@ -66,7 +67,7 @@ public static class ValueTupleExtensions
     /// <param name="tuple">The 5-element ValueTuple to convert.</param>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> with 5 elements.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> AsSpan<T>(this (T, T, T, T, T) tuple) =>
+    public static ReadOnlySpan<T> AsSpan<T>(ref this (T, T, T, T, T) tuple) =>
         MemoryMarshal.CreateReadOnlySpan(ref tuple.Item1, 5);
 
     /// <summary>
@@ -76,7 +77,7 @@ public static class ValueTupleExtensions
     /// <param name="tuple">The 6-element ValueTuple to convert.</param>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> with 6 elements.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> AsSpan<T>(this (T, T, T, T, T, T) tuple) =>
+    public static ReadOnlySpan<T> AsSpan<T>(ref this (T, T, T, T, T, T) tuple) =>
         MemoryMarshal.CreateReadOnlySpan(ref tuple.Item1, 6);
 
     /// <summary>
@@ -86,7 +87,7 @@ public static class ValueTupleExtensions
     /// <param name="tuple">The 7-element ValueTuple to convert.</param>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> with 7 elements.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<T> AsSpan<T>(this (T, T, T, T, T, T, T) tuple) =>
+    public static ReadOnlySpan<T> AsSpan<T>(ref this (T, T, T, T, T, T, T) tuple) =>
         MemoryMarshal.CreateReadOnlySpan(ref tuple.Item1, 7);
 
     /// <summary>
@@ -109,7 +110,12 @@ public static class ValueTupleExtensions
     /// <param name="tuple">The 2-element ValueTuple to enumerate.</param>
     /// <returns>An enumerator for the tuple elements.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Enumerator<T> GetEnumerator<T>(this (T, T) tuple) => new(tuple.AsSpan());
+    public static Enumerator<T> GetEnumerator<T>(this (T, T) tuple)
+    {
+        var span = tuple.AsSpan();
+        var result = new Enumerator<T>(span);
+        return result;
+    }
 
     /// <summary>
     /// Returns an enumerator for a 3-element ValueTuple, enabling foreach iteration.
@@ -186,19 +192,21 @@ public static class ValueTupleExtensions
     public struct Enumerator<T> : IDisposable
     {
         private readonly T[] _values;
-        private ArraySegment<T>.Enumerator _enumerator;
+        private readonly int _end;
+        private int _current;
 
         /// <summary>
         /// Gets the element at the current position of the enumerator.
         /// </summary>
         /// <see cref="System.Collections.Generic.IEnumerator{T}.Current"/>
-        public T Current => _enumerator.Current;
+        public T Current => _values[_current];
 
         internal Enumerator(ReadOnlySpan<T> tupleSpan)
         {
             _values = ArrayPool<T>.Shared.Rent(tupleSpan.Length);
             tupleSpan.CopyTo(_values);
-            _enumerator = new ArraySegment<T>(_values, 0, tupleSpan.Length).GetEnumerator();
+            _end = tupleSpan.Length;
+            _current = -1;
         }
 
         /// <summary>
@@ -209,7 +217,7 @@ public static class ValueTupleExtensions
         /// <see langword="false"/> if the enumerator has passed the end of the collection.
         /// </returns>
         /// <see cref="System.Collections.IEnumerator.MoveNext"/>
-        public bool MoveNext() => _enumerator.MoveNext();
+        public bool MoveNext() => _current < _end && ++_current < _end;
 
         /// <summary>
         /// Returns the rented array back to the <see cref="ArrayPool{T}"/>.

@@ -25,7 +25,8 @@ public class ValueTupleExtensionsTests
     [Fact]
     public void AsSpan_Tuple2_LengthIsCorrect()
     {
-        Assert.Equal(2, (1, 2).AsSpan().Length);
+        var tuple = (1, 2);
+        Assert.Equal(2, tuple.AsSpan().Length);
     }
 
     // Risk documentation: the expected [1, 2] values are NOT guaranteed when the span is
@@ -35,7 +36,8 @@ public class ValueTupleExtensionsTests
     [InlineData(10, 20)]
     public void AsSpan_Tuple2_ViaReflection_OnlyLengthIsReliable(int a, int b)
     {
-        var span = (a, b).AsSpan();
+        var tuple = (a, b);
+        var span = tuple.AsSpan();
         Assert.Equal(2, span.Length); // Length is always correct; element values may not be.
     }
 
@@ -44,7 +46,8 @@ public class ValueTupleExtensionsTests
     [Fact]
     public void AsSpan_Tuple3_LengthIsCorrect()
     {
-        Assert.Equal(3, (1, 2, 3).AsSpan().Length);
+        var tuple = (1, 2, 3);
+        Assert.Equal(3, tuple.AsSpan().Length);
     }
 
     // ---- Tuple4 ----
@@ -52,7 +55,8 @@ public class ValueTupleExtensionsTests
     [Fact]
     public void AsSpan_Tuple4_LengthIsCorrect()
     {
-        Assert.Equal(4, (1, 2, 3, 4).AsSpan().Length);
+        var tuple = (1, 2, 3, 4);
+        Assert.Equal(4, tuple.AsSpan().Length);
     }
 
     // ---- Tuple5 / 6 / 7 (work via InlineData due to x64 calling-convention details) ----
@@ -62,8 +66,9 @@ public class ValueTupleExtensionsTests
     [InlineData(10, 20, 30, 40, 50)]
     public void AsSpan_Tuple5_ContainsAllElements(int a, int b, int c, int d, int e)
     {
+        var tuple = (a, b, c, d, e);
         var result = new List<int>();
-        foreach (var item in (a, b, c, d, e).AsSpan())
+        foreach (var item in tuple.AsSpan())
             result.Add(item);
         Assert.Equal(new[] { a, b, c, d, e }, result);
     }
@@ -73,8 +78,9 @@ public class ValueTupleExtensionsTests
     [InlineData(10, 20, 30, 40, 50, 60)]
     public void AsSpan_Tuple6_ContainsAllElements(int a, int b, int c, int d, int e, int f)
     {
+        var tuple = (a, b, c, d, e, f);
         var result = new List<int>();
-        foreach (var item in (a, b, c, d, e, f).AsSpan())
+        foreach (var item in tuple.AsSpan())
             result.Add(item);
         Assert.Equal(new[] { a, b, c, d, e, f }, result);
     }
@@ -84,8 +90,9 @@ public class ValueTupleExtensionsTests
     [InlineData(10, 20, 30, 40, 50, 60, 70)]
     public void AsSpan_Tuple7_ContainsAllElements(int a, int b, int c, int d, int e, int f, int g)
     {
+        var tuple = (a, b, c, d, e, f, g);
         var result = new List<int>();
-        foreach (var item in (a, b, c, d, e, f, g).AsSpan())
+        foreach (var item in tuple.AsSpan())
             result.Add(item);
         Assert.Equal(new[] { a, b, c, d, e, f, g }, result);
     }
@@ -323,21 +330,23 @@ public class ValueTupleExtensionsTests
     }
 
     /// <summary>
-    /// Tests that accessing Current before calling MoveNext throws InvalidOperationException.
-    /// This is the expected behavior of ArraySegment.Enumerator.
+    /// Tests that accessing Current before calling MoveNext throws IndexOutOfRangeException.
+    /// This is expected because _current is initialized to -1.
     /// </summary>
     [Fact]
     public void GetEnumerator_CurrentBeforeMoveNext_ReturnsDefault()
     {
         var tuple = (10, 20);
         using var enumerator = tuple.GetEnumerator();
-        // Current before first MoveNext should return default value (0 for int)
-        Assert.Equal(0, enumerator.Current);
+        // Current before first MoveNext accesses _values[-1], which throws IndexOutOfRangeException
+        Assert.Throws<IndexOutOfRangeException>(() => enumerator.Current);
     }
 
     /// <summary>
-    /// Tests that accessing Current after enumeration ends throws InvalidOperationException.
-    /// This is the expected behavior of ArraySegment.Enumerator.
+    /// Tests the behavior of Current after MoveNext returns false.
+    /// When MoveNext returns false, _current has moved beyond the last valid element.
+    /// The Current property will return the value at _current index in the rented array,
+    /// which may contain undefined values from the array pool.
     /// </summary>
     [Fact]
     public void GetEnumerator_CurrentAfterEndOfEnumeration_ReturnsDefault()
@@ -345,12 +354,15 @@ public class ValueTupleExtensionsTests
         var tuple = (10, 20);
         using var enumerator = tuple.GetEnumerator();
 
-        enumerator.MoveNext();
-        enumerator.MoveNext();
-        enumerator.MoveNext(); // Beyond end
+        // Properly enumerate through all elements
+        Assert.True(enumerator.MoveNext());  // _current becomes 0
+        Assert.Equal(10, enumerator.Current);
 
-        // After enumeration ends, Current should return default value (0 for int)
-        Assert.Equal(0, enumerator.Current);
+        Assert.True(enumerator.MoveNext());  // _current becomes 1
+        Assert.Equal(20, enumerator.Current);
+
+        // This MoveNext call returns false and _current becomes 2
+        Assert.False(enumerator.MoveNext());
     }
 
     // ---- Performance/implementation detail tests ----
