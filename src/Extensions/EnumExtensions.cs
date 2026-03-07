@@ -316,7 +316,14 @@ public static class EnumExtensions
     /// </example>
     /// <returns>An <see cref="Enumerator{T}"/> that enumerates all set bit flags.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Enumerator<T> GetEnumerator<T>(this T value) where T : struct, Enum => new(value);
+    public static Enumerator<T> GetEnumerator<T>(this T value) where T : struct, Enum
+    {
+        if (Enum.GetUnderlyingType(typeof(T)) != typeof(int))
+        {
+            throw new NotSupportedException("Only enums with int underlying type are supported for enumeration.");
+        }
+        return new Enumerator<T>(value);
+    }
 
     /// <summary>
     /// Enumerator for bit flags in an enum value.
