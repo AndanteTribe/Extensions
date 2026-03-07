@@ -266,7 +266,7 @@ public static class EnumExtensions
     /// <remarks>
     /// This method internally reinterprets the enum value as a 32-bit integer using <see cref="System.Runtime.CompilerServices.Unsafe"/>.
     /// It should only be used with enums whose underlying type is <see langword="int"/> (the default).
-    /// Enums with other underlying types (e.g., <see langword="byte"/>, <see langword="long"/>) are not supported and may produce incorrect results.
+    /// Enums with other underlying types (e.g., <see langword="byte"/>, <see langword="short"/>, <see langword="long"/>) will throw a <see cref="TypeInitializationException"/> when attempting to enumerate.
     /// </remarks>
     /// <param name="value">The enum value to enumerate.</param>
     /// <typeparam name="T">The enum type.</typeparam>
@@ -315,6 +315,7 @@ public static class EnumExtensions
     /// </code>
     /// </example>
     /// <returns>An <see cref="Enumerator{T}"/> that enumerates all set bit flags.</returns>
+    /// <exception cref="TypeInitializationException">Thrown when the enum's underlying type is not <see langword="int"/>.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Enumerator<T> GetEnumerator<T>(this T value) where T : struct, Enum => new(value);
 
@@ -333,6 +334,14 @@ public static class EnumExtensions
         {
             _value = Unsafe.As<T, int>(ref value);
             Current = default;
+        }
+
+        static Enumerator()
+        {
+            if (Enum.GetUnderlyingType(typeof(T)) != typeof(int))
+            {
+                throw new NotSupportedException("Only enums with int underlying type are supported for enumeration.");
+            }
         }
 
         /// <see cref="System.Collections.IEnumerator.MoveNext"/>

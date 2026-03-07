@@ -173,29 +173,23 @@ public class EnumExtensionsTests
         Assert.Empty(result);
     }
 
-    // Risk case: Enumerator<T> constructor reads 4 bytes via Unsafe.As<T, int>(ref value).
-    // For ByteEnum (1 byte), this reads 3 bytes beyond the enum value's bounds.
-    // On .NET with zero-initialized stacks the upper bytes are typically 0, so simple values
-    // behave correctly in practice — but the code relies on undefined behavior.
+    // GetEnumerator only supports int-based enums.
+    // Non-int underlying types should throw NotSupportedException.
     [Fact]
-    public void GetEnumerator_ByteEnum_SingleFlag_DocumentedBehavior()
+    public void GetEnumerator_ByteEnum_ThrowsNotSupportedException()
     {
-        var result = new List<ByteEnum>();
-        foreach (var flag in ByteEnum.A)
-            result.Add(flag);
-        Assert.Contains(ByteEnum.A, result);
+        Assert.Throws<TypeInitializationException>(() => ByteEnum.A.GetEnumerator());
     }
 
-    // Risk case: Enumerator<T> stores the value in an int field (Unsafe.As<T, int>).
-    // For LongEnum (8 bytes), only the lower 32 bits are captured on little-endian systems.
-    // Flags above bit 31 (e.g. HighBit = 1L << 32) are silently dropped.
     [Fact]
-    public void GetEnumerator_LongEnum_HighBitFlag_IsNotEnumeratedDueToIntTruncation()
+    public void GetEnumerator_ShortEnum_ThrowsNotSupportedException()
     {
-        var result = new List<LongEnum>();
-        foreach (var flag in LongEnum.HighBit)
-            result.Add(flag);
-        // On little-endian: _value = lower 32 bits of 0x0000_0001_0000_0000 = 0 → nothing enumerated.
-        Assert.DoesNotContain(LongEnum.HighBit, result);
+        Assert.Throws<TypeInitializationException>(() => ShortEnum.A.GetEnumerator());
+    }
+
+    [Fact]
+    public void GetEnumerator_LongEnum_ThrowsNotSupportedException()
+    {
+        Assert.Throws<TypeInitializationException>(() => LongEnum.A.GetEnumerator());
     }
 }
