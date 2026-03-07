@@ -178,18 +178,18 @@ public class EnumExtensionsTests
     [Fact]
     public void GetEnumerator_ByteEnum_ThrowsNotSupportedException()
     {
-        Assert.Throws<NotSupportedException>(() => ByteEnum.A.GetEnumerator());
+        Assert.Throws<TypeInitializationException>(() => ByteEnum.A.GetEnumerator());
     }
 
     [Fact]
     public void GetEnumerator_ShortEnum_ThrowsNotSupportedException()
     {
-        Assert.Throws<NotSupportedException>(() => ShortEnum.A.GetEnumerator());
+        Assert.Throws<TypeInitializationException>(() => ShortEnum.A.GetEnumerator());
     }
 
     [Fact]
     public void GetEnumerator_LongEnum_ThrowsNotSupportedException()
     {
-        Assert.Throws<NotSupportedException>(() => LongEnum.A.GetEnumerator());
+        Assert.Throws<TypeInitializationException>(() => LongEnum.A.GetEnumerator());
     }
 }
