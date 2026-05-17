@@ -376,7 +376,8 @@ public class ValueTupleExtensionsTests
         using var enumerator = tuple.GetEnumerator();
 
         // Exhaust the enumerator
-        while (enumerator.MoveNext()) { }
+        while (enumerator.MoveNext())
+        { }
 
         // Call MoveNext again after exhaustion - _current >= _end so the first condition is false
         Assert.False(enumerator.MoveNext());
