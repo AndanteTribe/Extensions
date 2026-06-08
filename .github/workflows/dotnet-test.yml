@@ -34,10 +34,12 @@ jobs:
                     - dotnet-version: '10.0.x'
                       framework: 'net10.0'
         steps:
-            - uses: actions/checkout@v4
+            # ghasec-ignore: unpinned-action
+            - uses: AndanteTribe/Actions/actions/checkout@main # zizmor: ignore[unpinned-uses] repository-local action reference is intentionally tracked on @main
               with:
                   fetch-depth: 0
-            - uses: actions/setup-dotnet@v5
+            # ghasec-ignore: unpinned-action
+            - uses: AndanteTribe/Actions/actions/setup-dotnet@main # zizmor: ignore[unpinned-uses] repository-local action reference is intentionally tracked on @main
               with:
                   dotnet-version: ${{ matrix.dotnet-version }}
             - run: dotnet restore ./tests/Extensions.Tests
@@ -58,7 +60,8 @@ jobs:
                   dotnet tool install -g dotnet-reportgenerator-globaltool
                   reportgenerator -reports:"coverage.cobertura.xml" -targetdir:"report" -reporttypes:"Html;MarkdownSummary"
                   Get-Content report/Summary.md | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
-            - uses: actions/upload-artifact@v4
+            # ghasec-ignore: unpinned-action
+            - uses: AndanteTribe/Actions/actions/upload-artifact@main  # zizmor: ignore[unpinned-uses] repository-local action reference is intentionally tracked on @main
               if: matrix.framework == 'net10.0'
               with:
                   name: coverage-report-${{ matrix.framework }}
